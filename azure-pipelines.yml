@@ -1,0 +1,54 @@
+trigger:
+  - main
+  - dev
+  - release/*
+
+stages:
+  - stage: Dev
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/dev')
+    displayName: "Deploy - DEV"
+    jobs:
+      - job: Deploy_Dev
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - script: |
+              npm i -g @angular/cli@17
+              npm i
+              npm run build:dev
+            displayName: "Build angular dev"
+          - task: CopyFiles@2
+            inputs:
+              sourceFolder: "$(Build.SourcesDirectory)/dist/browser"
+              targetFolder: $(Build.Build.ArtifactStagingDirectory)/bin
+            displayName: "Copiando arquivos"
+          - task: AzureStaticWebApp@0
+            inputs:
+              app_location: "$(Build.Build.ArtifactStagingDirectory)/bin"
+              output_location: "dist"
+              skip_app_build: true
+              azure_static_web_apps_api_token: "$(tokendev)"
+# - stage: Prod
+#   condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+#   displayName: 'Deploy - PROD'
+#   jobs:
+#     - job: Deploy_Prod
+#       pool:
+#         vmImage: ubuntu-latest
+#       steps:
+#         - script: |
+#             npm i -g @angular/cli
+#             npm i --legacy-peer-deps
+#             npm run build:prod
+#           displayName: 'Build angular prod'
+#         - task: CopyFiles@2
+#           inputs:
+#             sourceFolder: '$(Build.SourcesDirectory)/dist'
+#             targetFolder: $(Build.Build.ArtifactStagingDirectory)/bin
+#           displayName: 'Copiando arquivos'
+#         - task: AzureStaticWebApp@0
+#           inputs:
+#             app_location: '$(Build.Build.ArtifactStagingDirectory)/bin'
+#             output_location: 'dist'
+#             skip_app_build: true
+#             azure_static_web_apps_api_token: '$(tokenprod)'
